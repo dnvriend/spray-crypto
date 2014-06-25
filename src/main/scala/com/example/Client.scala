@@ -36,7 +36,7 @@ object Client extends App {
   val futuresCluster = (1 to 1000).toList.map { i =>
     pipeline(Post("http://localhost:8080/crypto/encryptCluster", EncryptRequest("aes", Option("Hello World!" + i))))
   }
-  val futureCluster = Future.sequence(futures)
+  val futureCluster = Future.sequence(futuresCluster)
   Await.result(futureCluster, 30 seconds)
   val endCluster = System.currentTimeMillis()
 

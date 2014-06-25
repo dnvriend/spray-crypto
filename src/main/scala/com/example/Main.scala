@@ -173,8 +173,8 @@ object Main extends App with SimpleRoutingApp {
 
   val securityClusterRouter = system.actorOf(
     new ClusterRouterPool(new RoundRobinPool(10),
-      new ClusterRouterPoolSettings(totalInstances = 10, maxInstancesPerNode = 5,
-        allowLocalRoutees = false, useRole = "compute")).props(Security.props), "security-cluster")
+      new ClusterRouterPoolSettings(totalInstances = 500, maxInstancesPerNode = 10,
+        allowLocalRoutees = true, useRole = None)).props(Security.props), "security-cluster")
 
   // we starten onze spray REST service
   startServer(interface = "localhost", port = 8080) {

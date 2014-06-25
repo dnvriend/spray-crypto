@@ -1,45 +1,137 @@
 # spray-crypto
-Let's scale up! This time we will look at how fast we can make our REST service. Using routers, we can utilize 
-every core to the max! 
+Let's scale out! This time we will look at how reliable we can distribute our workload using a cluster configuration.
+Note, this solution isn't about speed, its about distribution of work. 
 
-Launch the REST server with:
+# Cluster configuration
+* MacBook@2009 as master @ 192.168.0.6 / Gb Ethernet
 
-    $ ./activator 'run-main com.example.Main'
+    $ ./launch-master.sh
     
-Launch the REST client with:
+We will first start the master, there is nothing special about the master node, only that it's the first node
+that's running, and therefor the oldest one.
 
-    $ ./activator 'run-main com.example.Client'
+Next we will launch nodes one by one that will become a member of the cluster and run the client each time and measure
+the performance.
     
-or
-    
-    $ ./activator
-    > runMain com.example.Client
+* Asus Core i7/16GB/250GB SSD as slave @ 192.168.0.27 / Gb Ethernet
 
-Run the client a couple of times and then look at the debug output of the Client, scroll a bit up and look for the text:
+    c:\project\spray-crypto>launch-node.bat
+    c:\project\spray-crypto>launch-node2.bat
+    c:\project\spray-crypto>launch-node3.bat
 
-I got the following values with 5 routers:
+# Launch the REST client with
+
+    $ ./launch-client.sh
+
+# Performance with local routees
+
+## Only local
 
     No router:
     ==========
-    Throughput for 1000 encrypts: 8044 ms
+    Throughput for 1000 encrypts: 6652 ms
     
     With router:
     ============
-    Throughput for 1000 encrypts: 1917 ms
+    Throughput for 1000 encrypts: 2270 ms
     
-And with 10 routers (guess the CPU was already utilized to the max)
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 4736 ms
+
+## 1 node
+
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 4306 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1326 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 3714 ms
+
+## 2 nodes
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 5161 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1188 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 3934 ms
+
+## 3 nodes
+
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 4741 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1354 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 4434 ms
+    
+# Performance without local routees
+    
+# 1 node
     
     No router:
     ==========
-    Throughput for 1000 encrypts: 7886 ms
+    Throughput for 1000 encrypts: 6083 ms
     
     With router:
     ============
-    Throughput for 1000 encrypts: 1593 ms
+    Throughput for 1000 encrypts: 1847 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 5409 ms
 
-I got the values above on my good old MacBook@2009, it's only a Core Duo so I expect much more from modern processing
-units!
+# 2 nodes
 
-Feel free to tweak the code and read [Akka Routing](http://doc.akka.io/docs/akka/snapshot/scala/routing.html)
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 4808 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1153 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 4940 ms
+
+# 3 nodes
+
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 4807 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1035 ms
+    
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 4676 ms
+
+# Performance conclusion
+There is a penalty to be paid when using a cluster:
+
+* Most importantly, and not handled in this example; no reliable messaging, so it's fire and forget, best effort at best!
+* Clustering using standard networking technologies like me at home, costs performance! However, when used correctly, 
+a cluster solution can be used for high availability. Hybrid solutions can be created to gain best of both worlds, 
+but as with a RAID array, getting high availability goes against performance. 
+
+I'm going to fiddle around a little more..
 
 Have fun!
