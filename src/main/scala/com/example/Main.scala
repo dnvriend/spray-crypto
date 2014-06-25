@@ -19,8 +19,9 @@ import scala.util.Success
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
-import akka.routing.{RoundRobinPool}
+import akka.routing.{FromConfig, RoundRobinPool}
 import akka.cluster.routing.{ClusterRouterPoolSettings, ClusterRouterPool}
+import com.typesafe.config.ConfigFactory
 
 trait Crypto {
   def encrypt(plainText: String): Try[String]
@@ -162,18 +163,18 @@ object Main extends App with SimpleRoutingApp {
 
   import Security.JsonMarshaller._
 
-  implicit val system = ActorSystem("my-system")
+  implicit val system = ActorSystem("ClusterSystem")
   implicit val executionContext = system.dispatcher
   implicit val timeout: Timeout = Timeout(15.seconds)
 
   val security = system.actorOf(Security.props, "security")
 
-  val securityRouter = system.actorOf(RoundRobinPool(10).props(Security.props), "security-router")
+  val securityRouter = system.actorOf(FromConfig.props(Security.props), "security-router")
 
   val securityClusterRouter = system.actorOf(
     new ClusterRouterPool(new RoundRobinPool(10),
       new ClusterRouterPoolSettings(totalInstances = 10, maxInstancesPerNode = 5,
-        allowLocalRoutees = true, useRole = "compute")).props(Security.props), "security-cluster")
+        allowLocalRoutees = false, useRole = "compute")).props(Security.props), "security-cluster")
 
   // we starten onze spray REST service
   startServer(interface = "localhost", port = 8080) {

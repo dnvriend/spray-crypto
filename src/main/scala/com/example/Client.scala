@@ -6,10 +6,11 @@ import spray.http._
 import spray.client.pipelining._
 import com.example.Security.{EncryptRequest, EncryptResponse}
 import scala.concurrent.duration._
+import com.typesafe.config.ConfigFactory
 
 object Client extends App {
   import Security.JsonMarshaller._
-  implicit val system = ActorSystem("Client")
+  implicit val system = ActorSystem("Client", ConfigFactory.load("client.conf"))
   implicit val executionContext = system.dispatcher
 
   val pipeline: HttpRequest => Future[EncryptResponse] =
