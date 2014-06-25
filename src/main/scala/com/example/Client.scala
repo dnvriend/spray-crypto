@@ -31,6 +31,14 @@ object Client extends App {
   Await.result(futureRouter, 30 seconds)
   val endRouter = System.currentTimeMillis()
 
+  val startCluster = System.currentTimeMillis()
+  val futuresCluster = (1 to 1000).toList.map { i =>
+    pipeline(Post("http://localhost:8080/crypto/encryptCluster", EncryptRequest("aes", Option("Hello World!" + i))))
+  }
+  val futureCluster = Future.sequence(futures)
+  Await.result(futureCluster, 30 seconds)
+  val endCluster = System.currentTimeMillis()
+
   system.shutdown()
   println(
     s"""No router:
@@ -40,5 +48,9 @@ object Client extends App {
        |With router:
        |============
        |Throughput for 1000 encrypts: ${endRouter - startRouter} ms
+       |
+       |With cluster:
+       |============
+       |Throughput for 1000 encrypts: ${endCluster - startCluster} ms
      """.stripMargin)
 }

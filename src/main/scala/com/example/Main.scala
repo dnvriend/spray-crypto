@@ -19,7 +19,8 @@ import scala.util.Success
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
-import akka.routing.RoundRobinPool
+import akka.routing.{RoundRobinPool}
+import akka.cluster.routing.{ClusterRouterPoolSettings, ClusterRouterPool}
 
 trait Crypto {
   def encrypt(plainText: String): Try[String]
@@ -169,9 +170,23 @@ object Main extends App with SimpleRoutingApp {
 
   val securityRouter = system.actorOf(RoundRobinPool(10).props(Security.props), "security-router")
 
+  val securityClusterRouter = system.actorOf(
+    new ClusterRouterPool(new RoundRobinPool(10),
+      new ClusterRouterPoolSettings(totalInstances = 10, maxInstancesPerNode = 5,
+        allowLocalRoutees = true, useRole = "compute")).props(Security.props), "security-cluster")
+
   // we starten onze spray REST service
   startServer(interface = "localhost", port = 8080) {
     pathPrefix("crypto") {
+      path("encryptCluster") {
+        post {
+          entity(as[Security.EncryptRequest]) { req =>
+            complete {
+              (securityClusterRouter ? req).mapTo[Security.EncryptResponse]
+            }
+          }
+        }
+      } ~
       path("encryptRouter") {
         post {
           entity(as[Security.EncryptRequest]) { req =>

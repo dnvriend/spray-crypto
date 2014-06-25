@@ -47,6 +47,7 @@ object CryptoBuild extends Build {
   def akkaDeps: Seq[ModuleID] =
     Seq(
       "com.typesafe.akka" %% "akka-osgi" % versions.akka.lib ,
+      "com.typesafe.akka" %% "akka-cluster" % versions.akka.lib ,
       "com.typesafe.akka" %% "akka-camel" % versions.akka.lib ,
       "com.typesafe.akka" %% "akka-slf4j" % versions.akka.lib ,
       "com.typesafe" % "config" % versions.akka.cfg ,
