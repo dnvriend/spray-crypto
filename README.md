@@ -1,52 +1,45 @@
 # spray-crypto
-This time with even more crypters! Try replacing crypto=aes with crypto=blow
+Let's scale up! This time we will look at how fast we can make our REST service. Using routers, we can utilize 
+every core to the max! 
 
-Launch with:
+Launch the REST server with:
 
-    $ ./activator run
+    $ ./activator 'run-main com.example.Main'
     
-# Install httpie
+Launch the REST client with:
+
+    $ ./activator 'run-main com.example.Client'
     
-    $ brew update
-    $ brew install httpie
-        
-# Encrypt
-Send a POST to:
-
-    $ http post http://localhost:8080/crypto/encrypt crypto=aes msg="Hello World"
-
-Result should be:
-
-    TTP/1.1 200 OK
-    Content-Length: 84
-    Content-Type: application/json; charset=UTF-8
-    Date: Wed, 25 Jun 2014 05:34:52 GMT
-    Server: spray-can/1.3.1
+or
     
-    {
-        "crypto": "aes",
-        "encrypted": "0GV5zeP6PqaduI+Vn48r60LZS6pyA8Rl10WYIGPgye8="
-    }
+    $ ./activator
+    > runMain com.example.Client
 
-# Decrypt:
-Send a POST to:
+Run the client a couple of times and then look at the debug output of the Client, scroll a bit up and look for the text:
 
-    http post http://localhost:8080/crypto/decrypt crypto=aes msg="GTEg2imgn5CzObt0C1JF4tHYd7ZcZ7N4ZCmkU6eLiiw="
-        
-Result should be:
+I got the following values with 5 routers:
 
-    HTTP/1.1 200 OK
-    Content-Length: 51
-    Content-Type: application/json; charset=UTF-8
-    Date: Wed, 25 Jun 2014 05:35:55 GMT
-    Server: spray-can/1.3.1
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 8044 ms
     
-    {
-       "crypto": "AES",
-       "decrypted": "Hello World"
-    }
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1917 ms
     
-Note: Encryption and decryption is a bit slow on my 2009 MacBook Intel Core Duo, so the timeout is set a bit high 
-(15 seconds), but it works!
+And with 10 routers (guess the CPU was already utilized to the max)
+    
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 7886 ms
+    
+    With router:
+    ============
+    Throughput for 1000 encrypts: 1593 ms
+
+I got the values above on my good old MacBook@2009, it's only a Core Duo so I expect much more from modern processing
+units!
+
+Feel free to tweak the code and read [Akka Routing](http://doc.akka.io/docs/akka/snapshot/scala/routing.html)
 
 Have fun!

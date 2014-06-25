@@ -19,6 +19,7 @@ import scala.util.Success
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
+import akka.routing.RoundRobinPool
 
 trait Crypto {
   def encrypt(plainText: String): Try[String]
@@ -91,61 +92,67 @@ object Security {
   def props = Props(new Security)
 }
 
-class Security extends Actor with ActorLogging {
-
+class AESSecurity extends Actor with ActorLogging with AESCrypto {
   import Security._
 
-  val aesService = context.actorOf(Props(new Actor with AESCrypto with ActorLogging {
-    override def receive: Actor.Receive = {
-      case EncryptRequest(_, Some(text)) =>
-        encrypt(text) match {
-          case Success(encr) =>
-            log.info("Encrypting: {}, result: {}", text, encr)
-            sender ! EncryptResponse("aes", Some(encr))
-          case Failure(cause) =>
-            log.error(cause, "Could not encrypt")
-            sender ! EncryptResponse("AES", None)
-        }
-      case DecryptRequest(_, Some(text)) =>
-        decrypt(text) match {
-          case Success(decr) =>
-            log.info("Decrypting: {}, result: {}", text, decr)
-            sender ! DecryptResponse("aes", Some(decr))
-          case Failure(cause) =>
-            log.error(cause, "Could not decrypt")
-            sender ! DecryptResponse("aes", None)
-        }
-    }
-  }))
+  override def receive: Actor.Receive = {
+    case EncryptRequest(_, Some(text)) =>
+      encrypt(text) match {
+        case Success(encr) =>
+          log.info("Encrypting: {}, result: {}", text, encr)
+          sender ! EncryptResponse("aes", Some(encr))
+        case Failure(cause) =>
+          log.error(cause, "Could not encrypt")
+          sender ! EncryptResponse("AES", None)
+      }
+    case DecryptRequest(_, Some(text)) =>
+      decrypt(text) match {
+        case Success(decr) =>
+          log.info("Decrypting: {}, result: {}", text, decr)
+          sender ! DecryptResponse("aes", Some(decr))
+        case Failure(cause) =>
+          log.error(cause, "Could not decrypt")
+          sender ! DecryptResponse("aes", None)
+      }
+  }
+}
 
-  val blowService = context.actorOf(Props(new Actor with BlowfishCrypto with ActorLogging {
-    override def receive: Actor.Receive = {
-      case EncryptRequest(_, Some(text)) =>
-        encrypt(text) match {
-          case Success(encr) =>
-            log.info("Encrypting: {}, result: {}", text, encr)
-            sender ! EncryptResponse("blow", Some(encr))
-          case Failure(cause) =>
-            log.error(cause, "Could not encrypt")
-            sender ! EncryptResponse("blow", None)
-        }
-      case DecryptRequest(_, Some(text)) =>
-        decrypt(text) match {
-          case Success(decr) =>
-            log.info("Decrypting: {}, result: {}", text, decr)
-            sender ! DecryptResponse("blow", Some(decr))
-          case Failure(cause) =>
-            log.error(cause, "Could not decrypt")
-            sender ! DecryptResponse("blow", None)
-        }
-    }
-  }))
+class BlowfishSecurity extends Actor with ActorLogging with BlowfishCrypto {
+  import Security._
+
+  override def receive: Actor.Receive = {
+    case EncryptRequest(_, Some(text)) =>
+      encrypt(text) match {
+        case Success(encr) =>
+          log.info("Encrypting: {}, result: {}", text, encr)
+          sender ! EncryptResponse("blow", Some(encr))
+        case Failure(cause) =>
+          log.error(cause, "Could not encrypt")
+          sender ! EncryptResponse("blow", None)
+      }
+    case DecryptRequest(_, Some(text)) =>
+      decrypt(text) match {
+        case Success(decr) =>
+          log.info("Decrypting: {}, result: {}", text, decr)
+          sender ! DecryptResponse("blow", Some(decr))
+        case Failure(cause) =>
+          log.error(cause, "Could not decrypt")
+          sender ! DecryptResponse("blow", None)
+      }
+  }
+}
+
+class Security extends Actor with ActorLogging {
+  import Security._
+
+  val aesService = context.actorOf(Props(new AESSecurity))
+  val blowService = context.actorOf(Props(new BlowfishSecurity))
 
   override def receive: Receive = {
     case msg @ EncryptRequest("aes", Some(text)) => aesService forward msg
-    case msg @ EncryptRequest("blow", Some(text)) => blowService forward msg
-
     case msg @ DecryptRequest("aes", Some(text)) => aesService forward msg
+
+    case msg @ EncryptRequest("blow", Some(text)) => blowService forward msg
     case msg @ DecryptRequest("blow", Some(text)) => blowService forward msg
   }
 }
@@ -158,21 +165,31 @@ object Main extends App with SimpleRoutingApp {
   implicit val executionContext = system.dispatcher
   implicit val timeout: Timeout = Timeout(15.seconds)
 
-  // we maken onze security actor die AES gaan encrypten en decrypten
   val security = system.actorOf(Security.props, "security")
+
+  val securityRouter = system.actorOf(RoundRobinPool(10).props(Security.props), "security-router")
 
   // we starten onze spray REST service
   startServer(interface = "localhost", port = 8080) {
     pathPrefix("crypto") {
-      path("encrypt") {
+      path("encryptRouter") {
         post {
           entity(as[Security.EncryptRequest]) { req =>
             complete {
-              (security ? req).mapTo[Security.EncryptResponse]
+              (securityRouter ? req).mapTo[Security.EncryptResponse]
             }
           }
         }
       } ~
+        path("encrypt") {
+          post {
+            entity(as[Security.EncryptRequest]) { req =>
+              complete {
+                (security ? req).mapTo[Security.EncryptResponse]
+              }
+            }
+          }
+        } ~
       path("decrypt") {
         post {
           entity(as[Security.DecryptRequest]) { req =>
