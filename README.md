@@ -5,15 +5,15 @@ Note, this solution isn't about speed, its about distribution of work.
 # Cluster configuration
 * MacBook@2009 as master @ 192.168.0.6 / Gb Ethernet
 
-    $ ./launch-master.sh
+    $ ./launch-leader.sh
     
-We will first start the master, there is nothing special about the master node, only that it's the first node
+We will first start the leader node, there is nothing special about this node, only that it's the first node
 that's running, and therefor the oldest one.
 
 Next we will launch nodes one by one that will become a member of the cluster and run the client each time and measure
 the performance.
     
-* Asus Core i7/16GB/250GB SSD as slave @ 192.168.0.27 / Gb Ethernet
+* Asus Core i7/16GB/250GB SSD multiple nodes @ 192.168.0.27 / Gb Ethernet
 
     c:\project\spray-crypto>launch-node.bat
     c:\project\spray-crypto>launch-node2.bat
@@ -123,6 +123,21 @@ the performance.
     With cluster:
     ============
     Throughput for 1000 encrypts: 4676 ms
+
+# Performance on the Asus i7
+Only the master node running
+
+    No router:
+    ==========
+    Throughput for 1000 encrypts: 1599 ms
+
+    With router:
+    ============
+    Throughput for 1000 encrypts: 353 ms
+
+    With cluster:
+    ============
+    Throughput for 1000 encrypts: 342 ms
 
 # Performance conclusion
 There is a penalty to be paid when using a cluster:
