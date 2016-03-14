@@ -1,4 +1,9 @@
 # spray-crypto
+A simple REST service that encrypts and decrypts payloads using AES. 
+Updated on 2016-03-14 to check whether `spray` still works on Akka v2.4.2
+and it does!
+
+# Usage
 Launch with:
 
     $ ./activator run
@@ -44,7 +49,7 @@ Result should be:
         "response": "Hello World!\n"
     }
     
-Note: Encryption and decryption is a bit slow on my 2009 MacBook Intel Core Duo, so the timeout is set a bit high 
-(15 seconds), but it works!
+~~Note: Encryption and decryption is a bit slow on my 2009 MacBook Intel Core Duo, so the timeout is set a bit high 
+(15 seconds), but it works!~~ My Macbook is a bit faster now (Macbook Pro 2014, 2,5 GHz Intel Core i7, 16GB RAM and 500GB SSD, yes its faster!)
 
 Have fun!
